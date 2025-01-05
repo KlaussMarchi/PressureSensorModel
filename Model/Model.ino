@@ -12,22 +12,36 @@ unsigned long espMillis(){
     return esp_timer_get_time()/1000;
 }
 
+float smooth(float value){
+    static const byte size = 5;
+    static float array[size];
+    static float sum = 0;
+    static byte i = 0;
+
+    sum = sum - array[i];
+    array[i] = value;
+
+    sum = sum + array[i];
+    i = (i + 1 < size) ? (i + 1) : 0;
+    return (sum / size);
+}
+
 float getPressure(){
-    static unsigned long startTime = espMillis();
-    static double X_n1, Y_n1;
+    static unsigned long startTime;
+    static float X_n1, Y_n1;
 
     if(espMillis() - startTime < 100)
         return Y_n1;
 
     startTime = espMillis();
-    double X_n = double(scale.read() / 10000.0);
-    double Y_n = 0.4665119089088967*X_n + 0.5334880910911033*Y_n1;
+    float X_n = float(scale.read() / 10000.0);
+    float Y_n = X_n*(0.124827) + Y_n1*(0.875173);
     X_n1 = X_n;
     Y_n1 = Y_n;
     return Y_n;
 }
 
-float getPressureDerivative(float newValue){
+float getPressureVariation(float newValue){
     static float previousValue;
     static float previousDerivative;
 
@@ -39,7 +53,7 @@ float getPressureDerivative(float newValue){
 
     previousDerivative = derivative;
     previousValue      = newValue;
-    return derivative;
+    return smooth(derivative);
 }
 
 bool isBlowing(bool reset){
@@ -53,11 +67,11 @@ bool isBlowing(bool reset){
     
     startTime = espMillis();
     const float Pn = getPressure();
-    const float Dn = getPressureDerivative(Pn);
+    const float Dn = getPressureVariation(Pn);
 
-    const float pBlow    = (1.0 / (1.0 + exp(-(-7.831586 + Pn*(-0.208470) + Pn1*(0.250839)  + Pn2*(-0.001847) + Pn3*(-0.251983) + Pn4*(0.144647) + Dn*(2.159529)  + Dn1*(1.412934) + Dn2*(-1.313097) + Dn3*(0.817576) + Dn4*(-0.418235)))));
-    const float pNotBlow = (1.0 / (1.0 + exp(-(-3.774275 + Pn*(-0.223280) + Pn1*(-0.043048) + Pn2*(0.033473) + Pn3*(-0.031903) + Pn4*(0.120884) + Dn*(-2.590689) + Dn1*(-1.163686) + Dn2*(1.051179) + Dn3*(-0.568338) + Dn4*(0.287333)))));
-
+    const float pBlow    = (1.0 / (1.0 + exp(-(0.359894 + Pn*(-0.137681) + Pn1*(-0.067455) + Pn2*(-0.049503) + Pn3*(-0.001147) + Pn4*(0.014043) + Dn*(1.702614) + Dn1*(0.990425) + Dn2*(0.185378) + Dn3*(-0.868179) + Dn4*(0.540314)))));
+    const float pNotBlow = (1.0 / (1.0 + exp(-(1.355041 + Pn*(-0.362906) + Pn1*(0.501752) + Pn2*(0.042881) + Pn3*(0.025190) + Pn4*(-0.423810) + Dn*(-6.137248) + Dn1*(0.010673) + Dn2*(-0.055308) + Dn3*(-0.198588) + Dn4*(0.147152)))));
+    
     if(pBlow > 0.5)
         is_blowing = true;
 
@@ -73,9 +87,15 @@ bool isBlowing(bool reset){
 
 void tarePressure(){
     const unsigned long startTime = espMillis();
+    Serial.println("tentando...");
 
-    while(espMillis() - startTime < 2000)
+    while(espMillis() - startTime < 3000)
         isBlowing(true);
+
+    if(!isBlowing(false))
+        return;
+
+    tarePressure();
 }
 
 void setup(){

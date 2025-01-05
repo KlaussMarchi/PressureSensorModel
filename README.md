@@ -1,0 +1,3 @@
+- priorize sopros com intensidade que faz sentido
+- coloque como false sopros fracos
+- sempre coloque que parou de soprar em sopros fraquinhos

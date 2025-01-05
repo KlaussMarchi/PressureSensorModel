@@ -12,8 +12,22 @@ unsigned long espMillis(){
     return esp_timer_get_time()/1000;
 }
 
+float smooth(float value){
+    static const byte size = 5;
+    static float array[size];
+    static float sum = 0;
+    static byte i = 0;
+
+    sum = sum - array[i];
+    array[i] = value;
+
+    sum = sum + array[i];
+    i = (i + 1 < size) ? (i + 1) : 0;
+    return (sum / size);
+}
+
 float getPressure(){
-    static unsigned long startTime = espMillis();
+    static unsigned long startTime;
     static float X_n1, Y_n1;
 
     if(espMillis() - startTime < 100)
@@ -21,13 +35,13 @@ float getPressure(){
 
     startTime = espMillis();
     float X_n = float(scale.read() / 10000.0);
-    float Y_n = 0.3558495560245919*X_n + 0.6441504439754081*Y_n1;
+    float Y_n = X_n*(0.124827) + Y_n1*(0.875173);
     X_n1 = X_n;
     Y_n1 = Y_n;
     return Y_n;
 }
 
-float getPressureDerivative(float newValue){
+float getPressureVariation(float newValue){
     static float previousValue;
     static float previousDerivative;
 
@@ -39,7 +53,7 @@ float getPressureDerivative(float newValue){
 
     previousDerivative = derivative;
     previousValue      = newValue;
-    return derivative;
+    return smooth(derivative);
 }
 
 void setup(){
@@ -54,14 +68,14 @@ void setup(){
 }
 
 void loop(){
-    static unsigned long startTime = espMillis();
+    static unsigned long startTime;
 
     if(espMillis() - startTime < 100)
         return;
     
     startTime = espMillis();
     const float pressure   = getPressure();
-    const float derivative = getPressureDerivative(pressure);
+    const float derivative = getPressureVariation(pressure);
     const float timePassed = (espMillis() - startProg) / 1000.0;
 
     StaticJsonDocument<256> data;

@@ -48,6 +48,10 @@ while True:
         continue
     
     values['blowing'] = False
+
+    #values['derivative'] /= 1.61
+    #values['pressure']   /= 1.61
+
     list.append(values)
     print(values)
 
