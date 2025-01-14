@@ -12,19 +12,24 @@ unsigned long espMillis(){
 
 float getPressure(){
     static unsigned long startTime;
-    static float X_n1, Y_n1;
+    static const byte xSize=2, ySize=3;
+    static float Xn[xSize] = {0};
+    static float Yn[ySize] = {0};
 
     if(espMillis() - startTime < 100)
-        return Y_n1;
+        return Yn[0];
 
     startTime = espMillis();
-    float X_n = float(scale.read() / 10000.0);
-    float Y_n = X_n*(0.329680) + Y_n1*(0.670320);
-    X_n1 = X_n;
-    Y_n1 = Y_n;
 
-    Serial.println(String(X_n) + "," + String(Y_n));
-    return Y_n;
+    for(byte n=xSize-1; n>0; n--)
+        Xn[n] = Xn[n-1];
+
+    for(byte n=ySize-1; n>0; n--) 
+        Yn[n] = Yn[n-1];
+
+    Xn[0] = float(scale.read() / 10000.0);;
+    Yn[0] = Xn[0]*(0.016239) + Xn[1]*(0.014858) + Yn[1]*(1.734903) + Yn[2]*(-0.766000);
+    return Yn[0];
 }
 
 void setup(){

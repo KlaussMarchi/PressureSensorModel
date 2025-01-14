@@ -4,7 +4,7 @@ import keyboard
 import pandas as pd
 import serial.tools.list_ports
 
-PATH = 'Model/files/test_7.csv'
+PATH = 'Model/files/test_10.csv'
 
 def getValue():
     global device
@@ -48,10 +48,6 @@ while True:
         continue
     
     values['blowing'] = False
-
-    #values['derivative'] /= 1.61
-    #values['pressure']   /= 1.61
-
     list.append(values)
     print(values)
 

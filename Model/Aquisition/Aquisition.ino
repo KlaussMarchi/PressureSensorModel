@@ -13,7 +13,7 @@ unsigned long espMillis(){
 }
 
 float smooth(float value){
-    static const byte size = 5;
+    static const byte size = 7;
     static float array[size];
     static float sum = 0;
     static byte i = 0;
@@ -28,32 +28,24 @@ float smooth(float value){
 
 float getPressure(){
     static unsigned long startTime;
-    static float X_n1, Y_n1;
+    static const byte xSize=2, ySize=3;
+    static float Xn[xSize] = {0};
+    static float Yn[ySize] = {0};
 
     if(espMillis() - startTime < 100)
-        return Y_n1;
+        return Yn[0];
 
     startTime = espMillis();
-    float X_n = float(scale.read() / 10000.0);
-    float Y_n = X_n*(0.124827) + Y_n1*(0.875173);
-    X_n1 = X_n;
-    Y_n1 = Y_n;
-    return Y_n;
-}
 
-float getPressureVariation(float newValue){
-    static float previousValue;
-    static float previousDerivative;
+    for(byte n=xSize-1; n>0; n--)
+        Xn[n] = Xn[n-1];
 
-    if(newValue == previousValue)
-        return previousDerivative;
-    
-    static const float dt = 0.100;
-    const float derivative = (newValue - previousValue) / dt;
+    for(byte n=ySize-1; n>0; n--) 
+        Yn[n] = Yn[n-1];
 
-    previousDerivative = derivative;
-    previousValue      = newValue;
-    return smooth(derivative);
+    Xn[0] = float(scale.read() / 10000.0);
+    Yn[0] = Xn[0]*(0.016239) + Xn[1]*(0.014858) + Yn[1]*(1.734903) + Yn[2]*(-0.766000);
+    return Yn[0];
 }
 
 void setup(){
@@ -74,15 +66,16 @@ void loop(){
         return;
     
     startTime = espMillis();
-    const float pressure   = getPressure();
-    const float derivative = getPressureVariation(pressure);
+    const float pressure = getPressure();
+    const float mean  = smooth(pressure);
+    const float ratio = (pressure - mean) / mean * 100; 
     const float timePassed = (espMillis() - startProg) / 1000.0;
 
     StaticJsonDocument<256> data;
     String response;
     data["time"] = timePassed;
-    data["pressure"]   = pressure;
-    data["derivative"] = derivative;
+    data["pressure"] = pressure;
+    data["ratio"]    = ratio;
     serializeJson(data, response);
     Serial.println(response);
 
