@@ -1,10 +1,13 @@
 import serial  # pip install pyserial
 from time import sleep
-import keyboard
+import keyboard, os
 import pandas as pd
 import serial.tools.list_ports
 
-PATH = 'Model/files/test_10.csv'
+files = [file for file in os.listdir('Model/files') if '.csv' in file]
+PATH = f'Model/files/test_{len(files)+1}.csv'
+print(PATH)
+
 
 def getValue():
     global device
@@ -47,7 +50,6 @@ while True:
     if values is None:
         continue
     
-    values['blowing'] = False
     list.append(values)
     print(values)
 

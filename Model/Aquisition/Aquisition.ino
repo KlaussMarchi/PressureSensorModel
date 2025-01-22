@@ -13,7 +13,7 @@ unsigned long espMillis(){
 }
 
 float smooth(float value){
-    static const byte size = 7;
+    static const byte size = 20;
     static float array[size];
     static float sum = 0;
     static byte i = 0;
@@ -53,8 +53,10 @@ void setup(){
     Wire.begin(18, 19);
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
-    while(!Serial.available())
-        continue;
+    while(!Serial.available()){
+        const float pressure = getPressure();
+        const float mean = smooth(pressure);
+    }
 
     startProg = espMillis();
 }
@@ -67,15 +69,14 @@ void loop(){
     
     startTime = espMillis();
     const float pressure = getPressure();
-    const float mean  = smooth(pressure);
-    const float ratio = (pressure - mean) / mean * 100; 
+    const float mean     = smooth(pressure);
     const float timePassed = (espMillis() - startProg) / 1000.0;
 
     StaticJsonDocument<256> data;
     String response;
     data["time"] = timePassed;
     data["pressure"] = pressure;
-    data["ratio"]    = ratio;
+    data["mean" ]    = mean;
     serializeJson(data, response);
     Serial.println(response);
 
