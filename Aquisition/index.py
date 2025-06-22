@@ -4,8 +4,8 @@ import keyboard, os
 import pandas as pd
 import serial.tools.list_ports
 
-files = [file for file in os.listdir('Model/files') if '.csv' in file]
-PATH = f'Model/files/test_{len(files)+1}.csv'
+files = [file for file in os.listdir('files') if '.csv' in file]
+PATH = f'files/test_{len(files)+1}.csv'
 print(PATH)
 
 
